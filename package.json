@@ -18,7 +18,8 @@
     "start": "node build/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.1"
+    "@modelcontextprotocol/sdk": "^1.0.1",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@types/node": "^20.19.43",

@@ -11,6 +11,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.1
         version: 1.30.0(zod@4.5.4)
+      zod:
+        specifier: ^4.1.5
+        version: 4.5.4
     devDependencies:
       '@types/node':
         specifier: ^20.19.43
