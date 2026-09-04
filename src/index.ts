@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import * as z from "zod/v4";
+import { execAsync } from "./utils.ts";
 
 const UID_SIDE_CAR_EXTENSIONS = new Set([
     ".gd",
@@ -116,6 +117,70 @@ server.registerTool(
             const message = error instanceof Error ? error.message : "Unknown I/O error";
             return {
                 content: [{ type: "text", text: `I/O Error: ${message}` }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.registerTool(
+    "validate_godot_script",
+    {
+        description: "Runs Godot headlessly to parse a target GDScript file for compilation, syntax errors, and warning flags.",
+        inputSchema: {
+            relativePath: z.string().describe("The path to the GDScript file relative to the project root (e.g., 'scripts/player.gd')."),
+            godotBinary: z.string().default("godot").describe("The command or absolute system path used to invoke the Godot executable.")
+        }
+    },
+    async ({ relativePath, godotBinary = "godot" }) => {
+        const projectRoot = findGodotProjectRoot(process.cwd());
+        if (!projectRoot) {
+            return {
+                content: [{ type: "text", text: "Error: No 'project.godot' found in parent tree." }],
+                isError: true
+            };
+        }
+
+        const targetPath = path.resolve(projectRoot, relativePath);
+        if (!isPathInsideRoot(projectRoot, targetPath)) {
+            return {
+                content: [{ type: "text", text: "Security Exception: Targeted script path is outside project root." }],
+                isError: true
+            };
+        }
+
+        if (!fs.existsSync(targetPath)) {
+            return {
+                content: [{ type: "text", text: `Error: Targeted script file does not exist at res://${relativePath}` }],
+                isError: true
+            };
+        }
+
+        // Godot checks scripts via: godot --headless --check-only --script res://path/to/script.gd
+        const godotResourcePath = `res://${relativePath.replace(/\\/g, "/")}`;
+        const command = `"${godotBinary}" --headless --check-only --script "${godotResourcePath}"`;
+
+        try {
+            // Run the compilation check inside the Godot project root folder
+            const { stdout, stderr } = await execAsync(command, { cwd: projectRoot });
+
+            // Combine output logs for evaluation
+            const outputLog = (stdout + "\n" + stderr).trim();
+
+            return {
+                content: [{
+                    type: "text",
+                    text: `Validation Complete. Godot passed compilation without fatal exit codes.\n\nEngine Log:\n${outputLog || "No compilation errors or warnings flagged."}`
+                }]
+            };
+        } catch (error: any) {
+            // Godot exits with non-zero codes on script compilation errors
+            const errorLog = (error.stdout + "\n" + error.stderr).trim() || error.message;
+            return {
+                content: [{
+                    type: "text",
+                    text: `Validation Failed: Compilation or syntax error detected by the engine!\n\nEngine Log:\n${errorLog}`
+                }],
                 isError: true
             };
         }
