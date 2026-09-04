@@ -1,0 +1,27 @@
+{
+  "name": "godot-mcp-server",
+  "version": "1.0.0",
+  "description": "a local godot mcp server",
+  "homepage": "https://github.com/yiuriel/godot-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/yiuriel/godot-mcp-server/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yiuriel/godot-mcp-server.git"
+  },
+  "type": "module",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.0.0"
+  }
+}
